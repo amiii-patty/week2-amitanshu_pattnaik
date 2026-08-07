@@ -38,8 +38,7 @@ using **Python FastAPI** with a clean layered architecture.
 | ORM | SQLAlchemy |
 | Database | PostgreSQL (Docker) / SQLite (local) |
 | Validation | Pydantic |
-| API Docs | Swagger / OpenAPI |
-| Containerization | Docker + Docker Compose |
+| API Docs | Swagger |
 | IDE | Visual Studio Code |
 
 ---
@@ -76,9 +75,6 @@ app/
 │   ├── product_router.py
 │   ├── cart_router.py
 │   └── order_router.py
-└── utils/
-├── exceptions.py
-└── helpers.py
 
 ## Setup Instructions
 
@@ -100,10 +96,6 @@ source venv/bin/activate
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Copy and configure environment variables
-cp .env.example .env
-# Edit .env with your DB credentials
-
-# 5. Start the application
+# 4. Start the application
 uvicorn app.main:app --reload
 
