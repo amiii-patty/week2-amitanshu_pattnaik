@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+
 from models.order import Order
 from models.orderDetails import OrderDetails
 from models.cart import Cart
@@ -7,9 +8,9 @@ from schemas import order_schema
 
 
 def checkout(db: Session, request: order_schema.CheckoutRequest):
-    # Join cart with product to get current price
     cart_items = (
-        db.query(Cart, Product.price)
+        db.query(Cart, Product)
+        # Fix: changed Product.price to full Product join — needed to update quantity on the same object
         .join(Product, Cart.product_id == Product.product_id)
         .filter(Cart.user_id == request.user_id)
         .all()
@@ -18,7 +19,15 @@ def checkout(db: Session, request: order_schema.CheckoutRequest):
     if not cart_items:
         return None
 
-    total_amount = sum(item.Cart.quantity * item.price for item in cart_items)
+    # Fix: added stock validation — raises if any item exceeds available stock before any DB write
+    for cart_item, product in cart_items:
+        if cart_item.quantity > product.quantity:
+            raise ValueError(
+                f"Insufficient stock for '{product.product_name}': "
+                f"requested {cart_item.quantity}, available {product.quantity}"
+            )
+
+    total_amount = round(sum(cart_item.quantity * product.price for cart_item, product in cart_items), 2)
 
     new_order = Order(
         user_id=request.user_id,
@@ -28,14 +37,17 @@ def checkout(db: Session, request: order_schema.CheckoutRequest):
     db.add(new_order)
     db.flush()  # get order_id before committing
 
-    for item in cart_items:
+    for cart_item, product in cart_items:
         detail = OrderDetails(
             order_id=new_order.order_id,
-            product_id=item.Cart.product_id,
-            quantity=item.Cart.quantity,
-            price=item.price
+            product_id=cart_item.product_id,
+            quantity=cart_item.quantity,
+            price=product.price
         )
         db.add(detail)
+
+        # Fix: deduct ordered quantity from the product table at time of checkout
+        product.quantity -= cart_item.quantity
 
     # Clear cart after checkout
     db.query(Cart).filter(Cart.user_id == request.user_id).delete()
@@ -55,7 +67,6 @@ def get_order_details(db: Session, order_id: int):
     if not order:
         return None
 
-    # Join OrderDetails with Product to get product_name
     results = (
         db.query(OrderDetails, Product.product_name)
         .join(Product, OrderDetails.product_id == Product.product_id)
@@ -70,7 +81,8 @@ def get_order_details(db: Session, order_id: int):
             "product_name": product_name,
             "quantity": detail.quantity,
             "price": detail.price,
-            "subtotal": detail.price * detail.quantity
+            # Fix: rounded subtotal to avoid floating point drift
+            "subtotal": round(detail.price * detail.quantity, 2)
         }
         for detail, product_name in results
     ]
@@ -93,4 +105,3 @@ def _map_order(order: Order):
         "payment_method": order.payment_method,
         "total_amount": order.total_amount
     }
-

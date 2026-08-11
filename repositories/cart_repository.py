@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+
 from models.cart import Cart
 from models.product import Product
 from schemas import cart_schema
@@ -60,7 +61,7 @@ def get_cart_summary(db: Session, user_id: int):
     items = []
     total_price = 0.0
     for cart_item, product_name, unit_price in results:
-        subtotal = unit_price * cart_item.quantity
+        subtotal = round(unit_price * cart_item.quantity, 2)  # Fix: rounded subtotal to avoid errors
         total_price += subtotal
         items.append({
             "cart_id": cart_item.cart_id,
@@ -70,7 +71,8 @@ def get_cart_summary(db: Session, user_id: int):
             "quantity": cart_item.quantity,
             "subtotal": subtotal
         })
-    return {"user_id": user_id, "items": items, "total_price": total_price}
+    # Fix: rounded total_price to avoid errors
+    return {"user_id": user_id, "items": items, "total_price": round(total_price, 2)}
 
 
 def _map_item(item: Cart):
@@ -80,4 +82,3 @@ def _map_item(item: Cart):
         "product_id": item.product_id,
         "quantity": item.quantity
     }
-
