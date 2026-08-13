@@ -1,8 +1,9 @@
+
 from sqlalchemy.orm import Session
 
 from repositories import product_repository, category_repository
 from schemas import product_schema
-from utils.exceptions import raise_not_found, raise_conflict  # Fix: removed HTTPException — HTTP concerns moved out of service layer
+from utils.exceptions import raise_not_found, raise_conflict
 
 
 def create_product(db: Session, request: product_schema.ProductCreate):
@@ -20,7 +21,7 @@ def create_product(db: Session, request: product_schema.ProductCreate):
 
 
 def get_all_products(db: Session):
-    # Fix: empty list is a valid state, return it as-is with 200 instead of raising 404
+    # Fix: empty list is a valid state — return as-is with 200 instead of raising 404
     return product_repository.get_all_products(db)
 
 
@@ -32,15 +33,19 @@ def get_product_by_id(db: Session, product_id: int):
 
 
 def search_products(db: Session, name: str = None, category_id: int = None):
-    # Fix: empty search result is a valid state, return it as-is with 200 instead of raising 404
+    # Fix: empty search result is a valid state — return as-is with 200 instead of raising 404
     return product_repository.search_products(db, name, category_id)
 
-# Fix: added update_product_quantity — guards against non-existent product before updating
-def update_product_quantity(db: Session, product_id: int, request: product_schema.ProductUpdateQuantity):
+def update_product_quantity(
+    db: Session,
+    product_id: int,
+    request: product_schema.ProductUpdateQuantity
+):
     product = product_repository.update_product_quantity(db, product_id, request.quantity)
     if not product:
         raise_not_found("Product not found")
     return product
+
 
 def delete_product(db: Session, product_id: int):
     product = product_repository.delete_product(db, product_id)

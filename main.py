@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from db.base import engine, Base
 from routers import user_router, category_router, product_router, cart_router, order_router
 
-Base.metadata.create_all(engine) #creates table
+
 
 #FastAPI app instance
 app = FastAPI(docs_url='/shoppingapp',

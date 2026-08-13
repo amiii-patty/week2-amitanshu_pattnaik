@@ -8,9 +8,12 @@ class Users(Base):
     
     user_id=Column(Integer,primary_key=True,index=True)
     name =Column(String, nullable=False)
+    username = Column(String, unique=True, nullable=False)
     email = Column(String,unique=True,nullable=False)
     password=Column(String,nullable=False)
     mobile=Column(String)
+
+    role = Column(String, nullable=False, default="customer")
 
     #one user can have many cart items.
     cart_items = relationship("Cart", back_populates="user")

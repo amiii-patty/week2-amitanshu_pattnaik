@@ -96,6 +96,15 @@ def get_order_details(db: Session, order_id: int):
         "items": items
     }
 
+def get_all_orders(db: Session):
+    orders = (
+        db.query(Order)
+        .order_by(Order.order_id.desc())
+        .all()
+    )
+
+    return [_map_order(order) for order in orders]
+
 
 def _map_order(order: Order):
     return {

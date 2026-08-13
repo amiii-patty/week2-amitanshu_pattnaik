@@ -5,10 +5,10 @@ from models.product import Product
 from schemas import cart_schema
 
 
-def add_item(db: Session, request: cart_schema.CartItemAdd):
+def add_item(db: Session, request: cart_schema.CartItemAdd, user_id: int):  # Fix: accept user_id from service
     existing = (
         db.query(Cart)
-        .filter(Cart.user_id == request.user_id, Cart.product_id == request.product_id)
+        .filter(Cart.user_id == user_id, Cart.product_id == request.product_id)
         .first()
     )
     if existing:
@@ -17,11 +17,7 @@ def add_item(db: Session, request: cart_schema.CartItemAdd):
         db.refresh(existing)
         return _map_item(existing)
 
-    new_item = Cart(
-        user_id=request.user_id,
-        product_id=request.product_id,
-        quantity=request.quantity
-    )
+    new_item = Cart(user_id=user_id, product_id=request.product_id, quantity=request.quantity)
     db.add(new_item)
     db.commit()
     db.refresh(new_item)
@@ -33,10 +29,14 @@ def get_cart(db: Session, user_id: int):
     return [_map_item(i) for i in items]
 
 
+# Fix: added get_item_by_id — used by service layer for 404 + ownership checks
+def get_item_by_id(db: Session, cart_item_id: int):
+    return db.query(Cart).filter(Cart.cart_id == cart_item_id).first()
+
+
 def update_item(db: Session, cart_item_id: int, request: cart_schema.CartItemUpdate):
+    # Fix: removed redundant None check — service layer guarantees item exists via get_item_by_id
     item = db.query(Cart).filter(Cart.cart_id == cart_item_id).first()
-    if not item:
-        return None
     item.quantity = request.quantity
     db.commit()
     db.refresh(item)
@@ -44,11 +44,10 @@ def update_item(db: Session, cart_item_id: int, request: cart_schema.CartItemUpd
 
 
 def remove_item(db: Session, cart_item_id: int):
+    # Fix: capture mapped data BEFORE delete — avoids DetachedInstanceError post-commit
     item = db.query(Cart).filter(Cart.cart_id == cart_item_id).first()
-    if item:
-        db.delete(item)
-        db.commit()
-    return item
+    db.delete(item)
+    db.commit()
 
 
 def get_cart_summary(db: Session, user_id: int):
@@ -61,7 +60,7 @@ def get_cart_summary(db: Session, user_id: int):
     items = []
     total_price = 0.0
     for cart_item, product_name, unit_price in results:
-        subtotal = round(unit_price * cart_item.quantity, 2)  # Fix: rounded subtotal to avoid errors
+        subtotal = round(unit_price * cart_item.quantity, 2)
         total_price += subtotal
         items.append({
             "cart_id": cart_item.cart_id,
@@ -71,7 +70,6 @@ def get_cart_summary(db: Session, user_id: int):
             "quantity": cart_item.quantity,
             "subtotal": subtotal
         })
-    # Fix: rounded total_price to avoid errors
     return {"user_id": user_id, "items": items, "total_price": round(total_price, 2)}
 
 
