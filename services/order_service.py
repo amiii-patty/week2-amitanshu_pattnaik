@@ -8,8 +8,9 @@ from utils.exceptions import raise_not_found, raise_bad_request, raise_forbidden
 
 # Fix: force user_id to logged-in user — prevents placing orders for another user
 def checkout(db: Session, request: order_schema.CheckoutRequest, current_user: TokenData):
-    # Milestone 1: force user_id from token — client cannot spoof another user's order
-    request.user_id = current_user.user_id  # Fix: .id -> .user_id
+    if request.user_id != current_user.user_id:
+        raise_forbidden("You are not authorised to place an order for this cart ")
+      # Fix: .id -> .user_id
 
     try:
         order = order_repository.checkout(db, request)
