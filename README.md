@@ -20,13 +20,19 @@ ABC is expanding its successful physical store to an online platform.
 This project implements the **User Module** of an Online Shopping Application  
 using **Python FastAPI** with a clean layered architecture.
 
-### Key Features
-- User Registration & Login
-- Browse & Search Products by name and category
-- Manage Shopping Cart (Add, Update, Remove, Summary)
-- Place Orders & View Order History
-- Dockerized setup with PostgreSQL
+### Features
 
+- JWT-based user registration and login
+- Role-based authorization for customers and admins
+- Public product browsing and search
+- Admin product and category management
+- Customer cart and checkout workflows
+- Customer order history and order details
+- Admin access to all orders
+- Centralized exception handling
+- File and console logging
+- Background order-confirmation task
+- Router-level tests using pytest
 ---
 
 ## 🛠️ Technology Stack
@@ -36,45 +42,92 @@ using **Python FastAPI** with a clean layered architecture.
 | Framework | Python FastAPI |
 | Language | Python 3.12 |
 | ORM | SQLAlchemy |
-| Database | PostgreSQL (Docker) / SQLite (local) |
+| Database | PostgreSQL / SQLite (local) |
 | Validation | Pydantic |
 | API Docs | Swagger |
 | IDE | Visual Studio Code |
 
 ---
+Method Endpoint Access
 
-## Project Structure
-app/
-├── main.py
-├── db/
-│   ├── session.py
-│   └── base.py
-├── models/
-│   ├── user.py
-│   ├── category.py
-│   ├── product.py
-│   ├── cart.py
-│   └── order.py
-├── schemas/
-│   ├── user_schema.py
-│   ├── product_schema.py
-│   ├── cart_schema.py
-│   └── order_schema.py
-├── repositories/
-│   ├── user_repository.py
-│   ├── product_repository.py
-│   ├── cart_repository.py
-│   └── order_repository.py
-├── services/
-│   ├── user_service.py
-│   ├── product_service.py
-│   ├── cart_service.py
-│   └── order_service.py
-├── routers/
-│   ├── user_router.py
-│   ├── product_router.py
-│   ├── cart_router.py
-│   └── order_router.py
+POST
+/api/users/register
+Public
+
+
+POST
+/api/users/login
+Public
+
+
+GET
+/api/products/
+Public
+
+
+GET
+/api/products/search
+Public
+
+
+POST
+/api/admin/products/
+Admin
+
+
+PATCH
+/api/admin/products/{id}/quantity
+Admin
+
+
+DELETE
+/api/admin/products/{id}
+Admin
+
+
+GET
+/api/categories/list
+Public
+
+
+POST
+/api/admin/categories/
+Admin
+
+
+PATCH
+/api/admin/categories/{id}
+Admin
+
+
+POST
+/api/cart/
+Authenticated user
+
+
+PATCH
+/api/cart/{id}
+Cart owner
+
+
+DELETE
+/api/cart/{id}
+Cart owner
+
+
+POST
+/api/orders/
+Authenticated user
+
+
+GET
+/api/orders/history/{user_id}
+Order owner
+
+
+GET
+/api/admin/orders
+Admin
 
 ## Setup Instructions
 
